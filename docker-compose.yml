@@ -1,0 +1,109 @@
+
+version: "3.8"
+services:
+
+#PHP Service -----------------------------------------------------------------------#
+  workspace:
+    build:
+      context: ./public
+      dockerfile: Dockerfile
+    image: php_service
+    container_name: workspace
+    restart: unless-stopped
+    tty: true
+    links:
+      - mysql
+    environment:
+      SERVICE_NAME: workspace
+      SERVICE_TAGS: dev
+    working_dir: /var/www/
+    volumes:
+      - ./public:/var/www/
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - frontend
+      - backend
+  
+  #Nginx Service  -----------------------------------------------------------------#
+  webserver:
+    image: tutum/nginx:latest 
+    container_name: NginxService
+    tty: true
+    networks:
+      - frontend
+      - backend
+    ports:
+      - "${NGINX_HOST_HTTP_PORT}:80"
+      - "${NGINX_HOST_HTTPS_PORT}:443"
+      - "${VARNISH_BACKEND_PORT}:81"
+    links:
+      - mysql
+    depends_on:
+      - workspace
+    volumes:
+      - ./public/:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
+  
+  #MySQL Service -----------------------------------------------------------------------#
+
+  mysql:
+    build:
+      context: ./mysql
+      args:
+        - MYSQL_VERSION=${MYSQL_VERSION}
+    restart: unless-stopped
+    tty: true
+    container_name: mysql
+    networks:
+      - backend
+    ports:
+      - "3306:3306"
+    environment:
+     - MYSQL_DATABASE=${MYSQL_DATABASE}
+     - MYSQL_USER=${MYSQL_USER}
+     - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+     - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+   
+  
+# phpmyadmin  Service  -----------------------------------------------------------------------#
+
+  phpmyadmin:
+    build: ./phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmindb
+    restart: always
+    links:
+      - mysql
+    ports:
+      - ${PMA_PORT}:80
+    depends_on: 
+      - mysql
+    environment:
+      - PMA_ARBITRARY=1
+      - MYSQL_USER=${PMA_USER}
+      - MYSQL_PASSWORD=${PMA_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${PMA_ROOT_PASSWORD}
+      - UPLOAD_LIMIT=3000000000
+    networks:
+      - frontend
+      - backend
+   
+
+networks:
+  frontend:
+    driver: ${NETWORKS_DRIVER}
+  backend:
+    driver: ${NETWORKS_DRIVER}
+
+
+volumes:
+  workspace:
+    driver: ${VOLUMES_DRIVER}
+  webserver:
+    driver: ${VOLUMES_DRIVER}
+  phpmyadmin:
+    driver: ${VOLUMES_DRIVER}
+  mysql:
+    driver: ${VOLUMES_DRIVER}
+  
