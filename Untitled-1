@@ -1,0 +1,8 @@
+
+git clone https://github.com/ismartSa/WorkSpace   
+
+git clone https://github.com/laravel/laravel.git 
+
+docker exec -it workspace php artisan migreat    
+
+docker exec -it workspace php artisan config:cache

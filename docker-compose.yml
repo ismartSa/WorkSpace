@@ -27,7 +27,7 @@ services:
   #Nginx Service  -----------------------------------------------------------------#
   webserver:
     image: tutum/nginx:latest 
-    container_name: NginxService
+    container_name: Nginx
     tty: true
     networks:
       - frontend
@@ -54,7 +54,7 @@ services:
         - MYSQL_VERSION=${MYSQL_VERSION}
     restart: unless-stopped
     tty: true
-    container_name: mysql
+    container_name: mysqls
     networks:
       - backend
     ports:
@@ -71,7 +71,7 @@ services:
   phpmyadmin:
     build: ./phpmyadmin
     image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmindb
+    container_name: phpmyadmin
     restart: always
     links:
       - mysql
